@@ -2,112 +2,66 @@
 # Run Model
 # --------------------------------------------------------------------#
 
-import os
 from case_def import *
-from input_data import *
 from z_val import *
 from scores import *
 from db_scan import *
 from i_forest import *
 from arima import *
 
+import os
+
 print('Starting ...')
 
+cwd = os.getcwd()
 
-def run_model(mode, case_type_prox, truth, cwd, sub_path):
+algo_dict = {1: 'Z Value', 2: 'DB Scan', 3: 'Isolation Forest', 4: 'ARIMA', 5: 'Holtwinters', 6: 'LSTM',
+             7: 'Vector Auto Regression', 8: 'Temporal Convolution'}
+
+def run_model(case_type, sub_path):
     '''Run the model'''
 
-    case_desc = get_case_desc(mode, case_type_prox, cwd, sub_path)
-    inp_data = get_input_data(case_desc)
+    case_dict = CaseDefinition(case_type, cwd, sub_path, algo_dict).case_file
 
-    result = get_run_algos(case_desc, truth, inp_data)
+    all_results = get_run_algos(case_dict)
 
-    # print(result)
+    #print(all_results['ARIMA'].keys())
+    print(all_results)
     # make result
     print('Done ... OK')
-    print(f'Please collect results from {os.path.dirname(cwd)}/results/{sub_path}')
-
-    return result
+    print(f'Please collect results from {case_dict.meta.res_file_dir}')
 
 
-def get_case_desc(mode, case_type_prox, cwd, sub_path):
-    '''Define the case'''
-    print('Defining the case ....')
-    case_desc = CaseDefinition(mode, case_type_prox, cwd, sub_path)
-    return case_desc
 
-
-def get_input_data(case_desc):
-    '''Get the input data'''
-    print('Getting the data ...')
-    inp_data = InputData(case_desc)
-    return inp_data
-
-
-def get_run_algos(case_desc, truth, inp_data):
+def get_run_algos(case_dict):
     '''Get and run algorithms'''
-    case_type_list = case_desc.get_case_type()[0]
     result = {}
-    if isinstance(case_type_list, list):
-        for i in case_type_list:
+    if len(case_dict.meta.algorithms_selected) > 1:
+        for i in case_dict.meta.algorithms_selected:
             print(f'Now running {i} ...')
-            res = switch_algorithms(i, truth, inp_data)
+            res = switch_algorithms(case_dict, i)
+            #print(res[f'anomaly prediction {i}'].value_counts())
             result.update({i: res})
+            #print(result[i].columns)
     else:
-        print(f'Now running {case_type_list} ...')
-        res = switch_algorithms(case_type_list, truth, inp_data)
-        result.update({case_type_list: res})
+        algo = case_dict.meta.algorithms_selected[0]
+        print(f'Now running {algo} ...')
+        res = switch_algorithms(case_dict, algo)
+        #print(res[f'anomaly prediction {algo}'].value_counts())
+        result.update({algo: res})
 
     return result
 
 
-def switch_algorithms(algo_text, truth, inp_data):
+def switch_algorithms(case, case_type):
     '''Define switcher for algorithms to get right function'''
-    switcher = {
-        'Z Value': run_z_value(truth, inp_data),
-        'DB Scan': run_db_scan(truth, inp_data),
-        'Isolation Forest': run_isolation_forest(truth, inp_data)
-    }
-    return switcher.get(algo_text, 'Invalid algorithm')
+    if case_type == 'Z Value':
+        run = get_z_outliers(case, case_type)
+    elif case_type == 'DB Scan':
+        run = get_db_scan_outliers(case, case_type)
+    elif case_type == 'Isolation Forest':
+        run = get_isolation_forest_outliers(case, case_type)
+    elif case_type == 'ARIMA':
+        run = Arima(case, case_type, fut_steps=5)
 
-
-# runners for the algortihms
-# z value
-def run_z_value(truth, inp_data):
-    '''Run the z-value algorithm'''
-    all_res = {}
-    data_res = ZValue(inp_data, truth).get_z_outliers()
-    z_val_res = ZValue(inp_data, truth).get_score()
-    all_res.update({'Data': data_res, 'Scores': z_val_res})
-    return all_res
-
-
-# density_scan
-def run_db_scan(truth, inp_data):
-    '''Run the db_scan algorithm'''
-    all_res = {}
-    data_res = DbScan(inp_data, truth).get_db_scan_outliers()
-    db_scan_res = DbScan(inp_data, truth).get_score()
-    all_res.update({'Data': data_res, 'Scores': db_scan_res})
-    return all_res
-
-
-# isolation_forest
-def run_isolation_forest(truth, inp_data):
-    '''Run isolation forest algorithm'''
-    all_res = {}
-    data_res = IsolationForest(inp_data, truth).get_isolation_forest_outliers()
-    i_forest_res = IsolationForest(inp_data, truth).get_score()
-    all_res.update({'Data': data_res, 'Scores': i_forest_res})
-    return all_res
-
-# arima
-def run_arima_model(inp_data, truth):
-    '''Run arima mode detect and forecast'''
-    all_res = {}
-    data_res = Arima(inp_data, truth)
-    print(data_res)
-
-# holt_winter()
-# lstm()
-# vector_autoregression()
+    return run
