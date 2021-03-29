@@ -10,13 +10,13 @@ from i_forest import *
 from arima import *
 
 import os
+import pandas as pd
 
 print('Starting ...')
 
 cwd = os.getcwd()
 
-algo_dict = {1: 'Z Value', 2: 'DB Scan', 3: 'Isolation Forest', 4: 'ARIMA', 5: 'Holtwinters', 6: 'LSTM',
-             7: 'Vector Auto Regression', 8: 'Temporal Convolution'}
+algo_dict = {1: 'Z Value', 2: 'DB Scan', 3: 'Isolation Forest', 4: 'ARIMA'}
 
 def run_model(case_type, sub_path):
     '''Run the model'''
@@ -24,12 +24,11 @@ def run_model(case_type, sub_path):
     case_dict = CaseDefinition(case_type, cwd, sub_path, algo_dict).case_file
 
     all_results = get_run_algos(case_dict)
-
-    #print(all_results['ARIMA'].keys())
+    all_results_df = pd.DataFrame(all_results)
     print(all_results)
     # make result
     print('Done ... OK')
-    print(f'Please collect results from {case_dict.meta.res_file_dir}')
+    # print(f'Please collect results from {case_dict.meta.res_file_dir}')
 
 
 
@@ -40,14 +39,11 @@ def get_run_algos(case_dict):
         for i in case_dict.meta.algorithms_selected:
             print(f'Now running {i} ...')
             res = switch_algorithms(case_dict, i)
-            #print(res[f'anomaly prediction {i}'].value_counts())
             result.update({i: res})
-            #print(result[i].columns)
     else:
         algo = case_dict.meta.algorithms_selected[0]
         print(f'Now running {algo} ...')
         res = switch_algorithms(case_dict, algo)
-        #print(res[f'anomaly prediction {algo}'].value_counts())
         result.update({algo: res})
 
     return result
@@ -62,6 +58,6 @@ def switch_algorithms(case, case_type):
     elif case_type == 'Isolation Forest':
         run = get_isolation_forest_outliers(case, case_type)
     elif case_type == 'ARIMA':
-        run = Arima(case, case_type, fut_steps=5)
+        run = Arima(case, case_type)
 
     return run

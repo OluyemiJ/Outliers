@@ -9,10 +9,6 @@ from run_mod import *
 # 2: use dbscan algorithm
 # 3: use isolation forest algorithm
 # 4: use arima
-# 5: use holtwinters
-# 6: use LSTM
-# 7: use vector autoregression
-# 8: use temporal convolution
 case_type = [4]
 
 # define case sub path. i.e where is your input data relative from the cases folder

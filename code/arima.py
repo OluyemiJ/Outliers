@@ -9,9 +9,8 @@ import pmdarima as pm
 from helpers import *
 from case_def import *
 from algo_output import *
-import pickle
 
-def Arima(case, case_type, fut_steps):
+def Arima(case, case_type):
     ''''Function for Arima'''
     size = len(case['data'])
     if size > 100:
@@ -29,6 +28,8 @@ def Arima(case, case_type, fut_steps):
     df, df_train, df_test = train_test_split(data, counter)
 
     algo_output = {}
+
+    ''' Arima model is called here. Parameters can be changed as needed'''
     step_model = pm.auto_arima(df_train['data'], start_p=1, start_q=1, max_p=3, max_q=3, m=12,
                                start_P=0, seasonal=True, d=1, D=1, trace=False, approx=False,
                                error_action='ignore', supress_warnings=True,
@@ -51,11 +52,10 @@ def Arima(case, case_type, fut_steps):
     algo_case_dump.debug_creation(fut_forecast_pred, df_test)
     algo_case_dump.se_metric(df_test['data'].values, fut_forecast_pred)
 
-    print('Finished Arima anomaly ... Starting forecasting ...')
 
+
+    '''
     updated_model = step_model.fit(df['data'])
-
-
     pickle.dump(step_model, open('file_name', 'wb'))
     res_fol_path = os.path.join('results', 'saved_models')
 
@@ -75,12 +75,12 @@ def Arima(case, case_type, fut_steps):
                               case.meta.file_name.split('.')[0]))
         file_name = case_type + '_' + case.meta.file_name.split('.')[0]
         pickle.dump(step_model, open(file_name, 'wb'))
-
-
-
+        
     forecast = updated_model.predict(n_periods=fut_steps).tolist()
 
     algo_case_dump.forecast_creation(forecast, size, fut_steps)
+    '''
+
 
     return algo_case_dump.algo_output
 

@@ -34,19 +34,14 @@ class CreateAlgoResult:
         df_past_anoms['mae'] = mean_absolute_error(test_list, forecast)
         df_past_anoms['anomaly_score'] = abs(df_past_anoms['expected value'] - df_past_anoms['real_value']) / df_past_anoms['mae']
 
-        df_past_anoms_ult = df_past_anoms[:5]
+        df_past_anoms_ult = df_past_anoms[:30]
 
-
-        df_past_anoms_ult = df_past_anoms_ult[(df_past_anoms_ult.index == df_past_anoms.index.max()) | (df_past_anoms_ult.index == ((df_past_anoms.index.max()) - 1))
-                                              |(df_past_anoms_ult.index == ((df_past_anoms.index.max()) - 2)) | (df_past_anoms_ult.index == ((df_past_anoms.index.max()) - 3))
-                                              |(df_past_anoms_ult.index == ((df_past_anoms.index.max()) - 4))]
-
-
+        df_past_anoms_ult = df_past_anoms_ult[(df_past_anoms_ult.index > ((df_past_anoms.index.max()) - 30))]
 
         if len(df_past_anoms_ult) == 0:
-            exists_anom_last_5 = 'FALSE'
+            exists_anom_last = 'FALSE'
         else:
-            exists_anom_last_5 = 'TRUE'
+            exists_anom_last = 'TRUE'
 
 
 
@@ -62,7 +57,7 @@ class CreateAlgoResult:
 
         df_past_anoms_ult['anomaly_score'] = (df_past_anoms_ult['anomaly_score'] - min) / (max - min)
 
-        self.algo_output['present_status'] = exists_anom_last_5
+        self.algo_output['present_status'] = exists_anom_last
         self.algo_output['present_alerts'] = df_past_anoms_ult.fillna(0).to_dict(orient='record')
         self.algo_output['past'] = df_past_anoms.fillna(0).to_dict(orient='record')
 
